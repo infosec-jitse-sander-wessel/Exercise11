@@ -11,21 +11,14 @@ import java.util.stream.Collectors;
  */
 public class Controller {
 
-    private List<BigInteger> arguments;
+    private CommandLine commandLine;
+    private final Options options;
 
     Controller(String[] args) throws Exception {
+        this.options = getOptions();
         CommandLineParser parser = new BasicParser();
         try {
-            CommandLine commandLine = parser.parse(new Options(), args);
-            this.arguments = Arrays.stream(commandLine.getArgs())
-                    .filter(StringUtils::isNumeric)
-                    .map(BigInteger::new)
-                    .collect(Collectors.toList());
-
-            if (this.arguments.size() != 3) {
-                throw new ParseException("Invalid number of integer arguments.");
-            }
-
+            this.commandLine = parser.parse(this.options, args);
         } catch (ParseException e) {
             System.out.println("Incorrect arguments: " + e.getMessage());
             printHelpPage();
@@ -33,11 +26,56 @@ public class Controller {
         }
     }
 
+    private static Options getOptions() {
+        Options options = new Options();
+        options.addOption("h", "help", false, "Display this help page");
+        return options;
+    }
+
     private void printHelpPage() {
         System.out.println("Usage: <number> <power> <modulo>");
     }
 
-    public void run() {
-        System.out.println(arguments.get(0) + "^" + arguments.get(1) + " % " + arguments.get(2));
+    public void run() throws ParseException {
+        if (commandLine.hasOption("h")) {
+            printHelpPage();
+            return;
+        }
+        List<BigInteger> arguments = Arrays.stream(commandLine.getArgs())
+                .filter(StringUtils::isNumeric)
+                .map(BigInteger::new)
+                .collect(Collectors.toList());
+
+        if (arguments.size() != 3) {
+            throw new ParseException("Invalid number of integer arguments.");
+        }
+
+        BigInteger base = arguments.get(0);
+        BigInteger power = arguments.get(1);
+        BigInteger modulo = arguments.get(2);
+        List<Boolean> powerBinary = getBigIntegerAsBinaryBooleans(power);
+        BigInteger result = calculate(base, base, powerBinary, 1, modulo);
+        System.out.println(result);
+    }
+
+    private BigInteger calculate(BigInteger base, BigInteger current,
+                                 List<Boolean> power, int powerIndex, BigInteger modulo) {
+        if (powerIndex == power.size()) {
+            return current;
+        }
+        BigInteger toReturn = current.multiply(current).mod(modulo);
+
+        if (power.get(powerIndex)) {
+            toReturn = toReturn.multiply(base).mod(modulo);
+        }
+
+        return calculate(base, toReturn, power, ++powerIndex, modulo);
+    }
+
+    private List<Boolean> getBigIntegerAsBinaryBooleans(BigInteger value) {
+        return value.toString(2)
+                .chars()
+                .mapToObj(e -> e == '1')
+                .collect(Collectors.toList());
     }
 }
