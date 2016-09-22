@@ -54,22 +54,23 @@ public class Controller {
         BigInteger power = arguments.get(1);
         BigInteger modulo = arguments.get(2);
         List<Boolean> powerBinary = getBigIntegerAsBinaryBooleans(power);
-        BigInteger result = calculate(base, base, powerBinary, 1, modulo);
+        powerBinary.remove(0);
+        BigInteger result = calculate(base, base, powerBinary, modulo);
         System.out.println(result);
     }
 
     private BigInteger calculate(BigInteger base, BigInteger current,
-                                 List<Boolean> power, int powerIndex, BigInteger modulo) {
-        if (powerIndex == power.size()) {
+                                 List<Boolean> power, BigInteger modulo) {
+        if (power.isEmpty()) {
             return current;
         }
         BigInteger toReturn = current.multiply(current).mod(modulo);
 
-        if (power.get(powerIndex)) {
+        if (power.remove(0)) {
             toReturn = toReturn.multiply(base).mod(modulo);
         }
 
-        return calculate(base, toReturn, power, ++powerIndex, modulo);
+        return calculate(base, toReturn, power, modulo);
     }
 
     private List<Boolean> getBigIntegerAsBinaryBooleans(BigInteger value) {
